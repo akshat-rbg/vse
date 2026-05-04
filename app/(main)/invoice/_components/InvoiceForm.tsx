@@ -176,6 +176,21 @@ export function InvoiceForm({ companies, retailers, initial, redirectTo }: Props
 
       <div>
         <label className="text-sm font-medium text-zinc-300">
+          Commission (%, on base amount)
+        </label>
+        <input
+          name="commissionPercent"
+          type="number"
+          min={0}
+          step="0.01"
+          value={commissionPercent}
+          onChange={(e) => setCommissionPercent(e.target.value)}
+          className="mt-1 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white"
+        />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-zinc-300">
           Cash discount amount (overrides % if both set)
         </label>
         <input
@@ -185,21 +200,6 @@ export function InvoiceForm({ companies, retailers, initial, redirectTo }: Props
           step="0.01"
           value={cdAmount}
           onChange={(e) => setCdAmount(e.target.value)}
-          className="mt-1 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium text-zinc-300">
-          Commission (%)
-        </label>
-        <input
-          name="commissionPercent"
-          type="number"
-          min={0}
-          step="0.01"
-          value={commissionPercent}
-          onChange={(e) => setCommissionPercent(e.target.value)}
           className="mt-1 w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white"
         />
       </div>

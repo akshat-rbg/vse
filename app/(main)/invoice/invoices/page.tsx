@@ -1,6 +1,5 @@
-import { Check, CircleDashed, FileText } from "lucide-react";
+import { Check, CircleDashed, FileText, Plus } from "lucide-react";
 import Link from "next/link";
-import { AddInvoiceDialog } from "@/app/(main)/invoice/_components/AddInvoiceDialog";
 import { DeleteEntityButton } from "@/app/(main)/invoice/_components/DeleteEntityButton";
 import {
   deleteInvoice,
@@ -85,6 +84,12 @@ export default async function InvoicesListPage() {
     round2(totalBilled - totalPaid - totalCredit),
   );
 
+  const canCreateInvoice =
+    store.companies.length > 0 && store.retailers.length > 0;
+  const invoiceNewHref = `/invoice/invoices/new?returnTo=${encodeURIComponent("/invoice/invoices")}`;
+  const companiesNewFromInvoicesHref = `/invoice/companies/new?returnTo=${encodeURIComponent("/invoice/invoices")}`;
+  const retailersNewFromInvoicesHref = `/invoice/retailers/new?returnTo=${encodeURIComponent("/invoice/invoices")}`;
+
   return (
     <div className="mx-auto max-w-md space-y-4 px-1 pb-24 lg:max-w-3xl lg:pb-6">
       {/* Header */}
@@ -128,8 +133,40 @@ export default async function InvoicesListPage() {
             No invoices yet
           </p>
           <p className="mt-1 text-[11px] text-white/45">
-            Tap the + button to issue your first invoice.
+            {canCreateInvoice
+              ? "Create your first bill on the full-page form."
+              : "Add a company and a retailer first, then create an invoice."}
           </p>
+          {canCreateInvoice ? (
+            <Link
+              href={invoiceNewHref}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[11px] font-bold text-white transition active:scale-[0.97]"
+              style={{
+                background: `linear-gradient(135deg, ${INDIGO}, ${VIOLET})`,
+                boxShadow: `0 4px 14px ${INDIGO}40`,
+              }}
+            >
+              <Plus className="size-3" /> New invoice
+            </Link>
+          ) : (
+            <p className="mt-4 flex flex-wrap items-center justify-center gap-x-1 text-[11px] text-white/50">
+              <Link
+                href={companiesNewFromInvoicesHref}
+                className="font-semibold underline underline-offset-2"
+                style={{ color: VIOLET }}
+              >
+                Company
+              </Link>
+              <span>·</span>
+              <Link
+                href={retailersNewFromInvoicesHref}
+                className="font-semibold underline underline-offset-2"
+                style={{ color: VIOLET }}
+              >
+                Retailer
+              </Link>
+            </p>
+          )}
         </div>
       ) : (
         <>
@@ -274,12 +311,20 @@ export default async function InvoicesListPage() {
         </>
       )}
 
-      {/* AddInvoiceDialog renders FAB itself */}
-      <AddInvoiceDialog
-        companies={store.companies}
-        retailers={store.retailers}
-        redirectTo="/invoice/invoices"
-      />
+      {canCreateInvoice ? (
+        <Link
+          href={invoiceNewHref}
+          className="fixed bottom-24 right-4 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-[12px] font-bold text-white shadow-xl transition active:scale-[0.95] lg:bottom-6 lg:right-6"
+          style={{
+            background: `linear-gradient(135deg, ${INDIGO}, ${VIOLET})`,
+            boxShadow: `0 8px 24px ${INDIGO}55`,
+          }}
+          aria-label="New invoice"
+        >
+          <Plus className="size-3.5" />
+          <span>New invoice</span>
+        </Link>
+      ) : null}
     </div>
   );
 }

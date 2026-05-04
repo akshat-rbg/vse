@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { safePostSaveRedirect } from "@/app/(main)/invoice/redirect-utils";
 import { computeInvoiceAmounts } from "@/lib/store/invoice-math";
-import { loadStore, saveStore } from "@/lib/store/persistence";
+import { loadStore, tryWriteStore } from "@/lib/store/persistence";
 import type {
   AppStore,
   Company,
@@ -96,7 +96,8 @@ export async function saveCompany(
   };
   if (idx >= 0) store.companies[idx] = row;
   else store.companies.push(row);
-  await saveStore(store);
+  const wrote = await tryWriteStore(store);
+  if (!wrote.ok) return { ok: false, error: wrote.error };
   revalidateInvoiceArea();
   redirect(
     safePostSaveRedirect(
@@ -116,7 +117,8 @@ export async function deleteCompany(id: string): Promise<ActionResult> {
   if (store.invoices.some((i) => i.companyId === id))
     return { ok: false, error: "Remove invoices using this company first." };
   store.companies = store.companies.filter((c) => c.id !== id);
-  await saveStore(store);
+  const wroteCo = await tryWriteStore(store);
+  if (!wroteCo.ok) return { ok: false, error: wroteCo.error };
   revalidateInvoiceArea();
   return { ok: true };
 }
@@ -181,7 +183,8 @@ export async function saveRetailer(
   };
   if (idx >= 0) store.retailers[idx] = row;
   else store.retailers.push(row);
-  await saveStore(store);
+  const wroteR = await tryWriteStore(store);
+  if (!wroteR.ok) return { ok: false, error: wroteR.error };
   revalidateInvoiceArea();
   redirect(
     safePostSaveRedirect(
@@ -196,7 +199,8 @@ export async function deleteRetailer(id: string): Promise<ActionResult> {
   if (store.invoices.some((i) => i.retailerId === id))
     return { ok: false, error: "Remove invoices for this retailer first." };
   store.retailers = store.retailers.filter((r) => r.id !== id);
-  await saveStore(store);
+  const wroteDr = await tryWriteStore(store);
+  if (!wroteDr.ok) return { ok: false, error: wroteDr.error };
   revalidateInvoiceArea();
   return { ok: true };
 }
@@ -293,7 +297,8 @@ export async function saveInvoice(
   };
   if (idx >= 0) store.invoices[idx] = row;
   else store.invoices.push(row);
-  await saveStore(store);
+  const wroteI = await tryWriteStore(store);
+  if (!wroteI.ok) return { ok: false, error: wroteI.error };
   revalidateInvoiceArea();
   redirect(
     safePostSaveRedirect(
@@ -310,7 +315,8 @@ export async function deleteInvoice(id: string): Promise<ActionResult> {
   if (store.creditNotes.some((c) => c.invoiceId === id))
     return { ok: false, error: "Remove credit notes for this invoice first." };
   store.invoices = store.invoices.filter((i) => i.id !== id);
-  await saveStore(store);
+  const wroteDi = await tryWriteStore(store);
+  if (!wroteDi.ok) return { ok: false, error: wroteDi.error };
   revalidateInvoiceArea();
   return { ok: true };
 }
@@ -358,7 +364,8 @@ export async function savePayment(
   };
   if (idx >= 0) store.payments[idx] = row;
   else store.payments.push(row);
-  await saveStore(store);
+  const wroteP = await tryWriteStore(store);
+  if (!wroteP.ok) return { ok: false, error: wroteP.error };
   revalidateInvoiceArea();
   redirect(
     safePostSaveRedirect(
@@ -371,7 +378,8 @@ export async function savePayment(
 export async function deletePayment(id: string): Promise<ActionResult> {
   const store = await loadStore();
   store.payments = store.payments.filter((p) => p.id !== id);
-  await saveStore(store);
+  const wroteDp = await tryWriteStore(store);
+  if (!wroteDp.ok) return { ok: false, error: wroteDp.error };
   revalidateInvoiceArea();
   return { ok: true };
 }
@@ -422,7 +430,8 @@ export async function saveCreditNote(
   };
   if (idx >= 0) store.creditNotes[idx] = row;
   else store.creditNotes.push(row);
-  await saveStore(store);
+  const wroteCn = await tryWriteStore(store);
+  if (!wroteCn.ok) return { ok: false, error: wroteCn.error };
   revalidateInvoiceArea();
   redirect(
     safePostSaveRedirect(
@@ -435,7 +444,8 @@ export async function saveCreditNote(
 export async function deleteCreditNote(id: string): Promise<ActionResult> {
   const store = await loadStore();
   store.creditNotes = store.creditNotes.filter((c) => c.id !== id);
-  await saveStore(store);
+  const wroteDcn = await tryWriteStore(store);
+  if (!wroteDcn.ok) return { ok: false, error: wroteDcn.error };
   revalidateInvoiceArea();
   return { ok: true };
 }

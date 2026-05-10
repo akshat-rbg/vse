@@ -253,6 +253,37 @@
   animation: auth-hairline-shimmer 8s ease-in-out infinite;
 }
 
+@keyframes auth-error-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(2px) scale(1.005);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes auth-error-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+.auth-error-enter {
+  animation: auth-error-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.auth-error-shake {
+  animation: auth-error-shake 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-bubble {
     animation: none !important;
@@ -262,6 +293,12 @@
   .auth-bg-glow-br,
   .auth-bg-hairline {
     animation: none !important;
+  }
+  .auth-error-enter,
+  .auth-error-shake {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
   }
 }
 

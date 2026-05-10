@@ -105,14 +105,16 @@ export function LoginForm() {
     >
       {error && (
         <div
-          className="flex items-start gap-2.5 rounded-xl px-3.5 py-2.5 text-[12px] leading-relaxed"
+          className="auth-error-enter auth-error-shake flex items-start gap-3 rounded-xl border px-4 py-3 text-[13px] font-medium leading-relaxed shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
           style={{
-            background: `${ROSE}14`,
-            border: `1px solid ${ROSE}33`,
-            color: "#fda4af",
+            background: "rgba(251,113,133,0.10)",
+            borderColor: "rgba(251,113,133,0.22)",
+            color: "#fca5a5",
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.04), 0 0 20px rgba(251,113,133,0.08)",
           }}
         >
-          <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+          <AlertCircle className="mt-0.5 size-4 shrink-0 text-rose-400" />
           <span>{error}</span>
         </div>
       )}

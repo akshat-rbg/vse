@@ -391,7 +391,7 @@ select
   i.company_id,
   c.name                                      as company_name,
   date_trunc('month', i.invoice_date)::date   as month,
-  to_char(i.invoice_date, 'Mon YYYY')         as month_label,
+  to_char(date_trunc('month', i.invoice_date), 'Mon YYYY') as month_label,
 
   count(i.id)                                 as invoice_count,
   coalesce(sum(i.base_amount),       0)       as total_base,

@@ -42,17 +42,64 @@ export function ForgotPasswordForm() {
   return (
     <>
       {error ? (
-        <p
-          className="mb-4 rounded-xl border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-200"
+        <div
+          className="auth-error-enter auth-error-shake mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-[13px] font-medium leading-relaxed shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
           role="alert"
+          style={{
+            background: "rgba(251,113,133,0.10)",
+            borderColor: "rgba(251,113,133,0.22)",
+            color: "#fca5a5",
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.04), 0 0 20px rgba(251,113,133,0.08)",
+          }}
         >
-          {error}
-        </p>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="mt-0.5 shrink-0 text-rose-400"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" x2="12" y1="8" y2="12" />
+            <line x1="12" x2="12.01" y1="16" y2="16" />
+          </svg>
+          <span>{error}</span>
+        </div>
       ) : null}
       {info ? (
-        <p className="mb-4 rounded-xl border border-teal-500/30 bg-teal-950/30 px-3 py-2 text-sm text-teal-100">
-          {info}
-        </p>
+        <div
+          className="auth-error-enter mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-[13px] font-medium leading-relaxed"
+          style={{
+            background: "rgba(52,211,153,0.10)",
+            borderColor: "rgba(52,211,153,0.22)",
+            color: "#6ee7b7",
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.04), 0 0 20px rgba(52,211,153,0.08)",
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="mt-0.5 shrink-0 text-emerald-400"
+          >
+            <rect width="20" height="16" x="2" y="4" rx="2" />
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+          </svg>
+          <span>{info}</span>
+        </div>
       ) : null}
 
       <form onSubmit={handleSubmit} noValidate>

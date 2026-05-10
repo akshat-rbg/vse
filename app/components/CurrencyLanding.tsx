@@ -5,7 +5,7 @@
   import { useRouter } from "next/navigation";                                                                                                                                            
    
   const AMBER = "rgb(245,158,11)";                                                                                                                                                        
-  const SPLASH_MS = 3400;
+const SPLASH_MS = 1200;
   const TAGLINE_PRE = "Built for the ";
   const TAGLINE_EM = "ledger";                                                                                                                                                            
   const TICKER_TARGET = 8742193;                                                                                                                                                          

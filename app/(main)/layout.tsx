@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/app/components/navigation/Sidebar";
 import { MobileNav } from "@/app/components/navigation/MobileNav";
@@ -14,16 +13,14 @@ export default async function MainAppLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
-
   const displayName =
-    (user.user_metadata?.full_name as string | undefined)?.trim() ||
-    (user.user_metadata?.username as string | undefined)?.trim() ||
-    user.email?.split("@")[0] ||
+    (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+    (user?.user_metadata?.username as string | undefined)?.trim() ||
+    user?.email?.split("@")[0] ||
     "User";
 
-  const email = user.email ?? "";
-  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? "";
+  const email = user?.email ?? "";
+  const avatarUrl = (user?.user_metadata?.avatar_url as string | undefined) ?? "";
 
   return (
     <div className="flex min-h-dvh">

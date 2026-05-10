@@ -24,9 +24,10 @@ export function RetailersClient({
   retailers: EnrichedRetailer[];
   hasCompanies: boolean;
 }) {
-  const [query, setQuery] = useState("");
+      const [query, setQuery] = useState("");
+  const [items, setItems] = useState(retailers);
 
-  const filtered = retailers.filter((r) => {
+  const filtered = items.filter((r) => {
     const q = query.toLowerCase().trim();
     if (!q) return true;
     return (
@@ -144,6 +145,7 @@ export function RetailersClient({
               taxIdType={r.taxIdType}
               invoiceCount={r.invoiceCount}
               totalBilled={r.totalBilled}
+              onDelete={(id) => setItems((prev) => prev.filter((x) => x.id !== id))}
             />
           ))}
         </div>

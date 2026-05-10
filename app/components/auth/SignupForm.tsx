@@ -2,14 +2,11 @@
 
 import { AlertCircle, ArrowRight, Eye, EyeOff, Mail } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const INDIGO = "#818cf8";
 const VIOLET = "#a78bfa";
-const EMERALD = "#34d399";
-const ROSE = "#fb7185";
 
 function useKeyboardInset() {
   const [inset, setInset] = useState(0);
@@ -47,7 +44,6 @@ const inputCls =
   "focus:shadow-[0_0_0_3px_rgba(129,140,248,0.18)] sm:text-sm";
 
 export function SignupForm() {
-  const router = useRouter();
   const keyboardInset = useKeyboardInset();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -98,8 +94,7 @@ export function SignupForm() {
         return;
       }
       if (data.session) {
-        router.push("/home");
-        router.refresh();
+        window.location.href = "/home";
         return;
       }
       setInfo("Check your email for a confirmation link before signing in.");

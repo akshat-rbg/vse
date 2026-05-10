@@ -11,6 +11,7 @@ type Props = {
   taxIdType: "GST" | "PAN";
   invoiceCount: number;
   totalBilled: number;
+  onDelete?: (id: string) => void;
 };
 
 const INDIGO = "#818cf8";
@@ -32,6 +33,7 @@ export function RetailerCard({
   taxIdType,
   invoiceCount,
   totalBilled,
+  onDelete,
 }: Props) {
   const initial = name.charAt(0).toUpperCase();
   const hasInvoices = invoiceCount > 0;
@@ -112,6 +114,7 @@ export function RetailerCard({
         <DeleteEntityButton
           id={id}
           onDelete={deleteRetailer}
+          onSuccess={onDelete}
           confirmMessage="Delete retailer? Remove invoices first."
           iconOnly
         />

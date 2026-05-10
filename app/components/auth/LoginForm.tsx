@@ -2,7 +2,7 @@
 
 import { AlertCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -46,7 +46,6 @@ const inputCls =
   "focus:shadow-[0_0_0_3px_rgba(129,140,248,0.18)] sm:text-sm";
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const keyboardInset = useKeyboardInset();
   const [showPassword, setShowPassword] = useState(false);
@@ -83,8 +82,7 @@ export function LoginForm() {
         setError(signError.message);
         return;
       }
-      router.push("/home");
-      router.refresh();
+      window.location.href = "/home";
     } catch {
       setError("Something went wrong. Try again.");
     } finally {

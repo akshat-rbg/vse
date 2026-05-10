@@ -30,9 +30,10 @@ export function CompaniesClient({
 }: {
   companies: CompanyWithStats[];
 }) {
-  const [query, setQuery] = useState("");
+      const [query, setQuery] = useState("");
+  const [items, setItems] = useState(companies);
 
-  const filtered = companies.filter((c) => {
+  const filtered = items.filter((c) => {
     const q = query.toLowerCase().trim();
     if (!q) return true;
     return (
@@ -149,9 +150,13 @@ export function CompaniesClient({
       ) : filtered.length === 0 ? (
         <NoMatch query={query} />
       ) : (
-        <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
           {filtered.map((c) => (
-            <CompanyRow key={c.id} c={c} />
+            <CompanyRow
+              key={c.id}
+              c={c}
+              onDelete={(id) => setItems((prev) => prev.filter((x) => x.id !== id))}
+            />
           ))}
         </ul>
       )}
@@ -173,7 +178,7 @@ export function CompaniesClient({
   );
 }
 
-function CompanyRow({ c }: { c: CompanyWithStats }) {
+function CompanyRow({ c, onDelete }: { c: CompanyWithStats; onDelete: (id: string) => void }) {
   const initial = c.name.charAt(0).toUpperCase();
   const hasInvoices = c.invoiceCount > 0;
   const location = [c.city, c.state].filter(Boolean).join(", ");
@@ -240,6 +245,7 @@ function CompanyRow({ c }: { c: CompanyWithStats }) {
         <DeleteEntityButton
           id={c.id}
           onDelete={deleteCompany}
+          onSuccess={onDelete}
           confirmMessage="Delete this company? Retailers and invoices must be removed first."
           iconOnly
         />

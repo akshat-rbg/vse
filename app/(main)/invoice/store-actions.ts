@@ -109,11 +109,6 @@ export async function saveCompany(
 
 export async function deleteCompany(id: string): Promise<ActionResult> {
   const store = await loadStore();
-  if (store.retailers.some((r) => r.companyId === id))
-    return {
-      ok: false,
-      error: "Remove retailers under this company first.",
-    };
   if (store.invoices.some((i) => i.companyId === id))
     return { ok: false, error: "Remove invoices using this company first." };
   store.companies = store.companies.filter((c) => c.id !== id);
@@ -130,7 +125,6 @@ export async function saveRetailer(
   formData: FormData,
 ): Promise<ActionResult> {
   const id = String(formData.get("id") ?? "").trim() || crypto.randomUUID();
-  const companyId = String(formData.get("companyId") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
   const phone = normalizePhone10(String(formData.get("phone") ?? ""));
@@ -142,7 +136,6 @@ export async function saveRetailer(
   const altRaw = String(formData.get("altPhone") ?? "").trim();
   const altPhone = altRaw ? normalizePhone10(altRaw) : undefined;
 
-  if (!companyId) return { ok: false, error: "Company is required." };
   if (!name) return { ok: false, error: "Retailer name is required." };
   if (!address) return { ok: false, error: "Address is required." };
   if (!isValidPhone10(phone))
@@ -162,14 +155,11 @@ export async function saveRetailer(
     return { ok: false, error: "Alternative number must be 10 digits." };
 
   const store = await loadStore();
-  if (!store.companies.some((c) => c.id === companyId))
-    return { ok: false, error: "Company not found." };
 
   const t = nowIso();
   const idx = store.retailers.findIndex((r) => r.id === id);
   const row: Retailer = {
     id,
-    companyId,
     name,
     address,
     phone,
@@ -275,9 +265,8 @@ export async function saveInvoice(
   const { companyId, retailerId } = parsed.data;
   if (!store.companies.some((c) => c.id === companyId))
     return { ok: false, error: "Company not found." };
-  const ret = store.retailers.find((r) => r.id === retailerId);
-  if (!ret || ret.companyId !== companyId)
-    return { ok: false, error: "Retailer must belong to the selected company." };
+  if (!store.retailers.some((r) => r.id === retailerId))
+    return { ok: false, error: "Retailer not found." };
 
   const calc = computeInvoiceAmounts({
     baseAmount: parsed.data.baseAmount,
@@ -366,6 +355,118 @@ export async function savePayment(
   else store.payments.push(row);
   const wroteP = await tryWriteStore(store);
   if (!wroteP.ok) return { ok: false, error: wroteP.error };
+  revalidateInvoiceArea();
+  redirect(
+    safePostSaveRedirect(
+      String(formData.get("_redirect")),
+      `${INV_BASE}/payments`,
+    ),
+  );
+}
+
+/**
+ * Merged payment: settles N invoices for the same retailer in one transaction.
+ * Allocation is FIFO by invoice date (oldest first), capped by each invoice's
+ * remaining outstanding (invoiceAmount - prior payments - credit notes).
+ * Any leftover after all outstandings are covered lands on the last invoice as overpay.
+ * All resulting Payment rows share one paymentGroupId so reports can recombine them.
+ */
+export async function saveMergedPayment(
+  _prev: ActionResult | undefined,
+  formData: FormData,
+): Promise<ActionResult> {
+  const retailerId = String(formData.get("retailerId") ?? "").trim();
+  const invoiceIdsRaw = String(formData.get("mergedInvoiceIds") ?? "").trim();
+  const date = String(formData.get("date") ?? "").trim() || todayDate();
+  const method = String(formData.get("method") ?? "") as PaymentMethod;
+  const amount = Number.parseFloat(String(formData.get("amount") ?? ""));
+
+  if (!retailerId) return { ok: false, error: "Retailer is required." };
+  const invoiceIds = invoiceIdsRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (invoiceIds.length < 2)
+    return { ok: false, error: "Select at least 2 invoices to merge." };
+  if (!PAYMENT_METHODS.includes(method))
+    return { ok: false, error: "Invalid payment method." };
+  if (!Number.isFinite(amount) || amount <= 0)
+    return { ok: false, error: "Payment amount must be greater than 0." };
+
+  const store = await loadStore();
+
+  const selected = invoiceIds
+    .map((id) => store.invoices.find((i) => i.id === id))
+    .filter((i): i is Invoice => Boolean(i));
+  if (selected.length !== invoiceIds.length)
+    return { ok: false, error: "One or more invoices not found." };
+  if (selected.some((i) => i.retailerId !== retailerId))
+    return {
+      ok: false,
+      error: "All invoices must belong to the same retailer.",
+    };
+
+  const paidByInvoice = new Map<string, number>();
+  for (const p of store.payments)
+    paidByInvoice.set(
+      p.invoiceId,
+      (paidByInvoice.get(p.invoiceId) ?? 0) + p.amount,
+    );
+  const returnedByInvoice = new Map<string, number>();
+  for (const c of store.creditNotes)
+    returnedByInvoice.set(
+      c.invoiceId,
+      (returnedByInvoice.get(c.invoiceId) ?? 0) + c.goodsReturnAmount,
+    );
+
+  const sorted = [...selected].sort((a, b) =>
+    a.invoiceDate.localeCompare(b.invoiceDate),
+  );
+
+  const groupId = crypto.randomUUID();
+  const t = nowIso();
+  const newPayments: Payment[] = [];
+  let remaining = Math.round(amount * 100) / 100;
+
+  for (let idx = 0; idx < sorted.length; idx++) {
+    if (remaining <= 0 && idx < sorted.length) break;
+    const inv = sorted[idx];
+    const paid = paidByInvoice.get(inv.id) ?? 0;
+    const returned = returnedByInvoice.get(inv.id) ?? 0;
+    const outstanding = Math.max(
+      0,
+      Math.round((inv.invoiceAmount - paid - returned) * 100) / 100,
+    );
+
+    const isLast = idx === sorted.length - 1;
+    const alloc = isLast
+      ? Math.round(remaining * 100) / 100
+      : Math.min(remaining, outstanding);
+
+    if (alloc <= 0) continue;
+
+    newPayments.push({
+      id: crypto.randomUUID(),
+      invoiceId: inv.id,
+      date,
+      method,
+      amount: Math.round(alloc * 100) / 100,
+      paymentGroupId: groupId,
+      createdAt: t,
+      updatedAt: t,
+    });
+    remaining = Math.round((remaining - alloc) * 100) / 100;
+  }
+
+  if (newPayments.length === 0)
+    return {
+      ok: false,
+      error: "Nothing to allocate — selected invoices are fully settled.",
+    };
+
+  store.payments.push(...newPayments);
+  const wrote = await tryWriteStore(store);
+  if (!wrote.ok) return { ok: false, error: wrote.error };
   revalidateInvoiceArea();
   redirect(
     safePostSaveRedirect(

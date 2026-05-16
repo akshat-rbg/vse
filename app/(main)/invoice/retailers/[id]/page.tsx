@@ -52,7 +52,6 @@ export default async function EditRetailerPage({
   return (
     <EditRetailerClient
       retailer={retailer}
-      companies={store.companies}
       redirectTo={redirectTo}
       invoices={myInvoices}
       payments={myPayments}

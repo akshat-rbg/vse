@@ -10,6 +10,7 @@ import type { CompanyWithStats } from "../page";
 const SKY = "#38bdf8";
 const INDIGO = "#818cf8";
 const EMERALD = "#34d399";
+const AMBER = "#fbbf24";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -181,6 +182,7 @@ export function CompaniesClient({
 function CompanyRow({ c, onDelete }: { c: CompanyWithStats; onDelete: (id: string) => void }) {
   const initial = c.name.charAt(0).toUpperCase();
   const hasInvoices = c.invoiceCount > 0;
+  const hasCommission = c.totalCommission > 0;
   const location = [c.city, c.state].filter(Boolean).join(", ");
 
   return (
@@ -249,6 +251,31 @@ function CompanyRow({ c, onDelete }: { c: CompanyWithStats; onDelete: (id: strin
           confirmMessage="Delete this company? Retailers and invoices must be removed first."
           iconOnly
         />
+      </div>
+
+      {/* Hairline divider */}
+      <div
+        className="mx-2.5 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent)",
+        }}
+      />
+
+      {/* Commission section */}
+      <div className="flex items-baseline justify-between gap-3 px-2.5 pb-2.5 pt-2">
+        <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40">
+          Commission earned
+        </span>
+        <span
+          className="text-[17px] font-extrabold leading-none tabular-nums"
+          style={{
+            color: hasCommission ? AMBER : "rgba(255,255,255,0.22)",
+            textShadow: hasCommission ? `0 0 18px ${AMBER}33` : undefined,
+          }}
+        >
+          {hasCommission ? inr.format(c.totalCommission) : "—"}
+        </span>
       </div>
     </li>
   );

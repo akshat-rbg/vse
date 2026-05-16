@@ -7,7 +7,6 @@ import { deleteRetailer } from "@/app/(main)/invoice/store-actions";
 type Props = {
   id: string;
   name: string;
-  companyName?: string | null;
   taxIdType: "GST" | "PAN";
   invoiceCount: number;
   totalBilled: number;
@@ -29,7 +28,6 @@ const inr = new Intl.NumberFormat("en-IN", {
 export function RetailerCard({
   id,
   name,
-  companyName,
   taxIdType,
   invoiceCount,
   totalBilled,
@@ -78,11 +76,6 @@ export function RetailerCard({
                 {taxIdType}
               </span>
             </div>
-            {companyName && (
-              <p className="mt-0.5 truncate text-[10px] text-white/40">
-                ↳ {companyName}
-              </p>
-            )}
             <p className="mt-0.5 truncate text-[11px]">
               <span
                 className="font-bold tabular-nums"

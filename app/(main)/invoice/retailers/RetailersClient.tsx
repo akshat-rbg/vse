@@ -3,12 +3,22 @@
 import { Plus, Search, Store } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { RetailerCard } from "@/app/(main)/invoice/_components/RetailerCard";
+import { DeleteEntityButton } from "@/app/(main)/invoice/_components/DeleteEntityButton";
+import { deleteRetailer } from "@/app/(main)/invoice/store-actions";
 import type { EnrichedRetailer } from "./page";
 
 const INDIGO = "#818cf8";
 const VIOLET = "#a78bfa";
 const EMERALD = "#34d399";
+const SKY = "#38bdf8";
+const AMBER = "#fbbf24";
+
+const inr = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
 
 function formatCompact(n: number) {
   if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)}Cr`;
@@ -19,12 +29,10 @@ function formatCompact(n: number) {
 
 export function RetailersClient({
   retailers,
-  hasCompanies,
 }: {
   retailers: EnrichedRetailer[];
-  hasCompanies: boolean;
 }) {
-      const [query, setQuery] = useState("");
+  const [query, setQuery] = useState("");
   const [items, setItems] = useState(retailers);
 
   const filtered = items.filter((r) => {
@@ -32,7 +40,6 @@ export function RetailersClient({
     if (!q) return true;
     return (
       r.name.toLowerCase().includes(q) ||
-      (r.companyName ?? "").toLowerCase().includes(q) ||
       r.taxId.toLowerCase().includes(q) ||
       r.phone.includes(q)
     );
@@ -78,7 +85,7 @@ export function RetailersClient({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, company, GST, phone…"
+            placeholder="Search name, GST, phone…"
             className="min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-white/30"
           />
           {query && (
@@ -131,45 +138,157 @@ export function RetailersClient({
       )}
 
       {retailers.length === 0 ? (
-        <EmptyState hasCompanies={hasCompanies} />
+        <EmptyState />
       ) : filtered.length === 0 ? (
         <NoMatch query={query} />
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((r) => (
-            <RetailerCard
+            <RetailerCommissionCard
               key={r.id}
-              id={r.id}
-              name={r.name}
-              companyName={r.companyName}
-              taxIdType={r.taxIdType}
-              invoiceCount={r.invoiceCount}
-              totalBilled={r.totalBilled}
-              onDelete={(id) => setItems((prev) => prev.filter((x) => x.id !== id))}
+              retailer={r}
+              onDelete={(id) =>
+                setItems((prev) => prev.filter((x) => x.id !== id))
+              }
             />
           ))}
         </div>
       )}
 
       {/* FAB */}
-      {hasCompanies && (
-        <Link
-          href="/invoice/retailers/new?returnTo=%2Finvoice%2Fretailers"
-          className="fixed bottom-24 right-4 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-[12px] font-bold text-white shadow-xl transition active:scale-[0.95] lg:bottom-6 lg:right-6"
-          style={{
-            background: `linear-gradient(135deg, ${INDIGO}, ${VIOLET})`,
-            boxShadow: `0 8px 24px ${INDIGO}55`,
-          }}
-        >
-          <Plus className="size-3.5" />
-          <span>New retailer</span>
-        </Link>
-      )}
+      <Link
+        href="/invoice/retailers/new?returnTo=%2Finvoice%2Fretailers"
+        className="fixed bottom-24 right-4 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-[12px] font-bold text-white shadow-xl transition active:scale-[0.95] lg:bottom-6 lg:right-6"
+        style={{
+          background: `linear-gradient(135deg, ${INDIGO}, ${VIOLET})`,
+          boxShadow: `0 8px 24px ${INDIGO}55`,
+        }}
+      >
+        <Plus className="size-3.5" />
+        <span>New retailer</span>
+      </Link>
     </div>
   );
 }
 
-function EmptyState({ hasCompanies }: { hasCompanies: boolean }) {
+function RetailerCommissionCard({
+  retailer,
+  onDelete,
+}: {
+  retailer: EnrichedRetailer;
+  onDelete?: (id: string) => void;
+}) {
+  const initial = retailer.name.charAt(0).toUpperCase();
+  const hasInvoices = retailer.invoiceCount > 0;
+  const tagColor = retailer.taxIdType === "GST" ? EMERALD : SKY;
+  const hasCommission = retailer.totalCommission > 0;
+
+  return (
+    <article
+      className="relative overflow-hidden rounded-xl"
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.07)",
+      }}
+    >
+      {/* Existing top section — preserved */}
+      <div className="flex items-center gap-2.5 p-2.5">
+        <Link
+          href={`/invoice/retailers/${retailer.id}`}
+          className="flex min-w-0 flex-1 items-center gap-2.5 transition active:opacity-70"
+        >
+          <span
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-[13px] font-bold text-white"
+            style={{
+              background: `linear-gradient(135deg, ${INDIGO}, ${VIOLET})`,
+              boxShadow: `0 4px 10px ${INDIGO}30`,
+            }}
+          >
+            {initial}
+          </span>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <p className="truncate text-[13px] font-semibold leading-tight text-white">
+                {retailer.name}
+              </p>
+              <span
+                className="shrink-0 rounded-md px-1.5 py-0.5 text-[8px] font-bold tracking-wide"
+                style={{
+                  background: `${tagColor}1f`,
+                  color: tagColor,
+                  border: `1px solid ${tagColor}40`,
+                }}
+              >
+                {retailer.taxIdType}
+              </span>
+            </div>
+            <p className="mt-0.5 truncate text-[11px]">
+              <span
+                className="font-bold tabular-nums"
+                style={{
+                  color: hasInvoices
+                    ? "rgba(255,255,255,0.85)"
+                    : "rgba(255,255,255,0.3)",
+                }}
+              >
+                {retailer.invoiceCount}
+              </span>
+              <span className="text-white/40">
+                {" "}
+                bill{retailer.invoiceCount !== 1 ? "s" : ""}
+                {" · "}
+              </span>
+              <span
+                className="font-bold tabular-nums"
+                style={{
+                  color: hasInvoices ? EMERALD : "rgba(255,255,255,0.3)",
+                }}
+              >
+                {hasInvoices ? inr.format(retailer.totalBilled) : "—"}
+              </span>
+            </p>
+          </div>
+        </Link>
+
+        <DeleteEntityButton
+          id={retailer.id}
+          onDelete={deleteRetailer}
+          onSuccess={onDelete}
+          confirmMessage="Delete retailer? Remove invoices first."
+          iconOnly
+        />
+      </div>
+
+      {/* Hairline divider */}
+      <div
+        className="mx-2.5 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent)",
+        }}
+      />
+
+      {/* Commission section */}
+      <div className="flex items-baseline justify-between gap-3 px-2.5 pb-2.5 pt-2">
+        <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40">
+          Commission earned
+        </span>
+        <span
+          className="text-[17px] font-extrabold leading-none tabular-nums"
+          style={{
+            color: hasCommission ? AMBER : "rgba(255,255,255,0.22)",
+            textShadow: hasCommission ? `0 0 18px ${AMBER}33` : undefined,
+          }}
+        >
+          {hasCommission ? inr.format(retailer.totalCommission) : "—"}
+        </span>
+      </div>
+    </article>
+  );
+}
+
+function EmptyState() {
   return (
     <div
       className="rounded-2xl px-5 py-10 text-center"
@@ -190,22 +309,18 @@ function EmptyState({ hasCompanies }: { hasCompanies: boolean }) {
         No retailers yet
       </p>
       <p className="mt-1 text-[11px] text-white/45">
-        {hasCompanies
-          ? "Add your first retailer to get started."
-          : "Add a company first, then a retailer."}
+        Add your first retailer to get started.
       </p>
-      {hasCompanies && (
-        <Link
-          href="/invoice/retailers/new?returnTo=%2Finvoice%2Fretailers"
-          className="mt-4 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[11px] font-bold text-white transition active:scale-[0.97]"
-          style={{
-            background: `linear-gradient(135deg, ${INDIGO}, ${VIOLET})`,
-            boxShadow: `0 4px 14px ${INDIGO}40`,
-          }}
-        >
-          <Plus className="size-3" /> Add retailer
-        </Link>
-      )}
+      <Link
+        href="/invoice/retailers/new?returnTo=%2Finvoice%2Fretailers"
+        className="mt-4 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[11px] font-bold text-white transition active:scale-[0.97]"
+        style={{
+          background: `linear-gradient(135deg, ${INDIGO}, ${VIOLET})`,
+          boxShadow: `0 4px 14px ${INDIGO}40`,
+        }}
+      >
+        <Plus className="size-3" /> Add retailer
+      </Link>
     </div>
   );
 }

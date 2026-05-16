@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { computeInvoiceAmounts } from "@/lib/store/invoice-math";
 import type { Company, Invoice, Retailer } from "@/lib/store/types";
+
 import { FormDatePicker } from "@/app/(main)/invoice/_components/FormDatePicker";
 import { FormSelectField } from "@/app/(main)/invoice/_components/FormSelectField";
 import {
@@ -38,11 +39,6 @@ export function InvoiceForm({ companies, retailers, initial, redirectTo }: Props
     String(initial?.commissionPercent ?? "0"),
   );
 
-  const filteredRetailers = useMemo(
-    () => retailers.filter((r) => r.companyId === companyId),
-    [retailers, companyId],
-  );
-
   const calc = useMemo(() => {
     const base = Number.parseFloat(baseAmount) || 0;
     return computeInvoiceAmounts({
@@ -76,10 +72,7 @@ export function InvoiceForm({ companies, retailers, initial, redirectTo }: Props
         label="Company *"
         placeholder="Select company"
         value={companyId}
-        onValueChange={(v) => {
-          setCompanyId(v);
-          setRetailerId("");
-        }}
+        onValueChange={setCompanyId}
         options={companies.map((c) => ({ value: c.id, label: c.name }))}
       />
 
@@ -87,16 +80,12 @@ export function InvoiceForm({ companies, retailers, initial, redirectTo }: Props
         name="retailerId"
         label="Retailer *"
         placeholder={
-          !companyId
-            ? "Select company first"
-            : filteredRetailers.length === 0
-              ? "No retailers for this company"
-              : "Select retailer"
+          retailers.length === 0 ? "No retailers" : "Select retailer"
         }
         value={retailerId}
         onValueChange={setRetailerId}
-        options={filteredRetailers.map((r) => ({ value: r.id, label: r.name }))}
-        disabled={!companyId || filteredRetailers.length === 0}
+        options={retailers.map((r) => ({ value: r.id, label: r.name }))}
+        disabled={retailers.length === 0}
       />
 
       <div>

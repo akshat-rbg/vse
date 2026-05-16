@@ -23,7 +23,6 @@ export type Company = {
 
 export type Retailer = {
   id: string;
-  companyId: string;
   name: string;
   address: string;
   phone: string;
@@ -71,6 +70,8 @@ export type Payment = {
   date: string;
   method: PaymentMethod;
   amount: number;
+  /** Shared id across all payments created in one Merge & Pay submit; null for single payments. */
+  paymentGroupId?: string;
   createdAt: string;
   updatedAt: string;
 };

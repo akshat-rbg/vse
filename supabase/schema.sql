@@ -49,7 +49,6 @@ create table if not exists public.companies (
 create table if not exists public.retailers (
   id                  uuid primary key default uuid_generate_v4(),
   user_id             uuid not null references auth.users(id) on delete cascade,
-  company_id          uuid not null references public.companies(id) on delete restrict,
 
   name                text not null,
   address             text not null,
@@ -103,16 +102,20 @@ create table if not exists public.invoices (
 --  1d. payments
 -- ─────────────────────────────────────────────
 create table if not exists public.payments (
-  id          uuid primary key default uuid_generate_v4(),
-  user_id     uuid not null references auth.users(id) on delete cascade,
-  invoice_id  uuid not null references public.invoices(id) on delete restrict,
+  id                uuid primary key default uuid_generate_v4(),
+  user_id           uuid not null references auth.users(id) on delete cascade,
+  invoice_id        uuid not null references public.invoices(id) on delete restrict,
 
-  date        date not null default current_date,
-  method      text not null check (method in ('Cash','UPI','Bank Transfer','Cheque','Other')),
-  amount      numeric(14,2) not null check (amount > 0),
+  -- when set, this payment is one leg of a merged transaction;
+  -- all legs that share a payment_group_id were submitted together.
+  payment_group_id  uuid,
 
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  date              date not null default current_date,
+  method            text not null check (method in ('Cash','UPI','Bank Transfer','Cheque','Other')),
+  amount            numeric(14,2) not null check (amount > 0),
+
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
 );
 
 -- ─────────────────────────────────────────────
@@ -143,7 +146,6 @@ create index if not exists idx_companies_state       on public.companies(state);
 
 -- retailers
 create index if not exists idx_retailers_user        on public.retailers(user_id);
-create index if not exists idx_retailers_company     on public.retailers(company_id);
 
 -- invoices
 create index if not exists idx_invoices_user         on public.invoices(user_id);
@@ -157,6 +159,7 @@ create index if not exists idx_payments_user         on public.payments(user_id)
 create index if not exists idx_payments_invoice      on public.payments(invoice_id);
 create index if not exists idx_payments_date         on public.payments(date desc);
 create index if not exists idx_payments_method       on public.payments(method);
+create index if not exists idx_payments_group        on public.payments(payment_group_id);
 
 -- credit_notes
 create index if not exists idx_credit_notes_user     on public.credit_notes(user_id);
@@ -306,7 +309,7 @@ select
   c.city,
   c.state,
 
-  count(distinct r.id)                       as retailer_count,
+  count(distinct i.retailer_id)              as retailer_count,
   count(distinct i.id)                       as invoice_count,
 
   coalesce(sum(i.invoice_amount),  0)        as total_billed,
@@ -325,7 +328,6 @@ select
   c.updated_at
 
 from public.companies c
-left join public.retailers r  on r.company_id = c.id
 left join public.invoices  i  on i.company_id = c.id
 
 left join (
@@ -349,8 +351,6 @@ create or replace view public.retailer_summary as
 select
   r.id,
   r.user_id,
-  r.company_id,
-  c.name                                     as company_name,
   r.name,
   r.phone,
   r.tax_id_type,
@@ -370,14 +370,13 @@ select
   r.updated_at
 
 from public.retailers r
-join public.companies c  on c.id = r.company_id
 left join public.invoices i on i.retailer_id = r.id
 left join (
   select invoice_id, sum(amount) as total_paid
   from public.payments group by invoice_id
 ) p on p.invoice_id = i.id
 
-group by r.id, c.name;
+group by r.id;
 
 
 -- ─────────────────────────────────────────────

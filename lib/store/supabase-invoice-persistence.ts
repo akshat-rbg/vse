@@ -49,7 +49,6 @@ function rowToCompany(r: Record<string, unknown>): Company {
 function rowToRetailer(r: Record<string, unknown>): Retailer {
   return {
     id: String(r.id),
-    companyId: String(r.company_id),
     name: String(r.name),
     address: String(r.address),
     phone: String(r.phone).trim(),
@@ -104,6 +103,9 @@ function rowToPayment(r: Record<string, unknown>): Payment {
     date: dateOnly(String(r.date)),
     method: safe as Payment["method"],
     amount: num(r.amount),
+    paymentGroupId: r.payment_group_id
+      ? String(r.payment_group_id)
+      : undefined,
     createdAt: iso(r.created_at),
     updatedAt: iso(r.updated_at),
   };
@@ -149,7 +151,6 @@ function retailerToRow(r: Retailer, userId: string) {
   return {
     id: r.id,
     user_id: userId,
-    company_id: r.companyId,
     name: r.name,
     address: r.address,
     phone: r.phone,
@@ -192,6 +193,7 @@ function paymentToRow(p: Payment, userId: string) {
     id: p.id,
     user_id: userId,
     invoice_id: p.invoiceId,
+    payment_group_id: p.paymentGroupId ?? null,
     date: dateOnly(p.date),
     method: p.method,
     amount: p.amount,

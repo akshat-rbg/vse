@@ -7,6 +7,7 @@ export type CompanyWithStats = Company & {
   totalBilled: number;
   totalPaid: number;
   outstanding: number;
+  totalCommission: number;
 };
 
 export default async function CompaniesListPage() {
@@ -21,12 +22,14 @@ export default async function CompaniesListPage() {
     const invoices = store.invoices.filter((inv) => inv.companyId === c.id);
     const totalBilled = invoices.reduce((s, inv) => s + inv.invoiceAmount, 0);
     const totalPaid   = invoices.reduce((s, inv) => s + (paidByInvoice.get(inv.id) ?? 0), 0);
+    const totalCommission = invoices.reduce((s, inv) => s + inv.commissionAmount, 0);
     return {
       ...c,
       invoiceCount: invoices.length,
       totalBilled:  Math.round(totalBilled * 100) / 100,
       totalPaid:    Math.round(totalPaid   * 100) / 100,
       outstanding:  Math.max(0, Math.round((totalBilled - totalPaid) * 100) / 100),
+      totalCommission: Math.round(totalCommission * 100) / 100,
     };
   });
 
